@@ -1,0 +1,221 @@
+
+import random
+import time
+
+class CantMove( Exception ) :
+
+   def __init__( self, reason ) : 
+      self. __reason = reason
+
+   def __repr__( self ) :
+      return "unable to find a move: {}". format( self.__reason )
+
+
+class Nim :
+   
+   def __init__( self, startstate ) :
+      self.state = startstate
+
+
+   def __repr__( self ) :
+
+      index=1
+      
+      for row in self.state:
+         if row==0:
+            print(str(index)+":")
+            print("\n")
+            index=index+1
+         else:
+            print (str(index)+" : ", end=' ')
+            index=index+1
+            num=row
+         
+            while (num>0):
+               print("1", end=' ')
+               num=num-1
+            print("\n")
+
+      return ("Current Nim states")
+
+
+   #Return sum of all rows:
+
+   def sum( self ) :
+      sum=0
+      
+      for row in self.state:
+         sum=sum+row
+
+      return sum
+
+
+    # Return nimber (xor of all rows): 
+
+   def nimber( self ) :
+      xor=None
+      for row in self.state:
+         if(xor==None):
+            xor=row
+         else:
+            binary=row
+            xor=xor^binary
+      return xor
+
+   # Make a random move, raise a CantMove if
+   # there is nothing left to remove. 
+
+   def randommove( self ) :
+      makemove=False
+
+      if self.sum()==0:
+         CantMove("no sticks left")
+      else:
+         while not makemove:
+            x=random.randrange(1,len(self.state))-1
+            print(x)
+            if self.state[x]!=0:
+               if self.state[x]==1:
+                  self.state[x]=0
+                  makemove=True
+               else:
+                  y=random.randrange(1,self.state[x])
+                  print(y)
+                  self.state[x]=self.state[x]-y
+                  makemove=True
+
+            
+   # Try to force a win with misere strategy.
+   # This functions make a move, if there is exactly
+   # one row that contains more than one stick.
+   # In that case, it makes a move that will leave
+   # an odd number of rows containing 1 stick.
+   # This will eventually force the opponent to take the
+   # last stick.
+   # If it cannot obtain this state, it should raise
+   # CantMove( "more than one row has more than one stick" )
+
+   def removelastmorethantwo( self ):
+      index=0
+      count=0
+      number=0
+      for row in self.state:
+         if row!=0:
+            number=number+1
+         if row>1:
+            index=self.state.index(row)
+            count=count+1
+
+      if count==1:
+         if number%2==0:
+            self.state[index]=0
+         else:
+            self.state[index]=1
+      if count>1:
+         CantMove( "more than one row has more than one stick" )
+         
+
+
+   # Try to find a move that makes the nimber zero.
+   # Raise CantMove( "nimber is already zero" ), if the
+   # nimber is zero already.
+
+   def makenimberzero( self ) :
+      nmb= self.nimber( )
+      if nmb:
+         movemade=False
+         while not movemade:
+            randrow=random.randrange(len(self.state))
+            x=self.state[randrow]^self.nimber()
+            if self.state[randrow]!=0:
+               if  x<self.state[randrow]:
+                     self.state[randrow]=x
+                     movemade=True
+      elif nmb == 0:
+         CantMove( "nimber is already zero" )
+  
+ 
+   def optimalmove( self ) :
+
+      movemade=False
+
+      if not movemade:
+         size=self.sum()
+         self.removelastmorethantwo()
+         if size!=self.sum():
+            print("Computer made its move")
+            movemade=True
+      if not movemade:
+         size=self.sum()
+         self.makenimberzero()
+         if size!=self.sum():
+            print("Computer made its move")
+            movemade=True
+      if not movemade:
+         size=self.sum()
+         try:
+            self.randommove()
+            print("Computer made its move")
+         except Exception as e:
+            print(e)
+      
+
+
+   # Let the user make a move. Make sure that the move
+   # is correct. This function never crashes, not
+   # even with the dumbest user in the world. 
+           
+   def usermove( self ) :
+      numRows=0
+      makemove=False
+      while not makemove:
+         row=input("Select the row: ")
+         try:
+            row=int(row)
+            if row<0 or row>len(self.state):
+               print("Invalid row number!")
+            else:
+               number=input("Select the amount of sticks to remove: ")
+               try:
+                  number=int(number)
+                  if number<1 or number>self.state[row-1]:
+                     print("Invalid amount!")
+                  else:
+                     self.state[row-1]=self.state[row-1]-number
+                     makemove=True
+               except:
+                   print("You did not entered an integer!")
+         except:
+            print("You did not entered an integer!")
+
+
+   def play():
+      st=Nim([1,2,3,4,5])
+
+      turn='user'
+      
+      while st.sum()>1:
+         if turn == 'user' :
+            print( "\n" )
+            print( st )
+            print( "hello, user, please make a move" )
+            st. usermove( )
+            turn = 'computer'
+         else :
+            print( "\n" )
+            print( st )
+            print( "now i will make a move\n" )
+            print( "thinking" )
+            for r in range( 15 ) :
+               print( ".", end = "", flush = True )
+               time. sleep( 0.1 )
+            print( "\n" )
+            st. optimalmove( )
+            turn = 'user'
+      print( "\n" )
+      if turn == 'user' :
+         print( "you lost\n" )
+      else :
+         print( "you won\n" )
+
+
